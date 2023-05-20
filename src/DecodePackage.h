@@ -95,6 +95,7 @@ public:
 	void RegPointCloudCallback(const std::function<void(typename TWPointCloud<PointT>::Ptr, bool)>& callback);
 	void RegGPSCallback(const std::function<void(const std::string&)>& callback);
 	void RegIMUDataCallback(const std::function<void(const TWIMUData&)>& callback);
+	void RegDeliveryCalibrateCallback(const std::function<void(const char* ptr, int length)>& callback);
 	void RegExceptionCallback(const std::function<void(const TWException&)>& callback);
 
 	void SetPackageCache(std::shared_ptr<PackageCache> packageCachePtr){ m_packageCachePtr = packageCachePtr; }
@@ -108,7 +109,7 @@ public:
 private:
 	void InitBasicVariables();
 	void BeginDecodePackageData();
-	void CheckLostPacket(float angle, unsigned short mirror);
+	void CheckLostPacket(double angle, unsigned short mirror);
 
 	void DecodeTensorLite(char* udpData, unsigned int t_sec, unsigned int t_usec);
 	void DecodeTensorPro(char* udpData, unsigned int t_sec, unsigned int t_usec);
@@ -267,6 +268,7 @@ private:
 	std::function<void(typename TWPointCloud<PointT>::Ptr, bool)> m_funcPointCloud = NULL;
 	std::function<void(const std::string&)> m_funcGPS = NULL;
 	std::function<void(const TWIMUData&)> m_funcIMU = NULL;
+	std::function<void(const char* ptr, int length)> m_funcEOLCalibration = NULL;
 
 	std::function<void(const TWException&)> m_funcException = NULL;
 
@@ -291,6 +293,12 @@ template <typename PointT>
 void DecodePackage<PointT>::RegIMUDataCallback(const std::function<void(const TWIMUData&)>& callback)
 {
 	m_funcIMU = callback;
+}
+
+template <typename PointT>
+void DecodePackage<PointT>::RegDeliveryCalibrateCallback(const std::function<void(const char* ptr, int length)>& callback)
+{
+	m_funcEOLCalibration = callback;
 }
 
 template <typename PointT>
@@ -812,7 +820,7 @@ void DecodePackage<PointT>::BeginDecodePackageData()
 }
 
 template <typename PointT>
-void DecodePackage<PointT>::CheckLostPacket(float angle, unsigned short mirror)
+void DecodePackage<PointT>::CheckLostPacket(double angle, unsigned short mirror)
 {
 	if (LT_TensorLite == m_lidarType || LT_TensorPro == m_lidarType || LT_TensorPro_echo2 == m_lidarType || LT_Scope == m_lidarType)
 	{
@@ -884,7 +892,7 @@ void DecodePackage<PointT>::UseDecodeTensorPro(char* udpData, std::vector<TWPoin
 			unsigned short  hexPulse = TwoHextoInt(udpData[offset + seq * 4 + 2], udpData[offset + seq * 4 + 3]);
 
 			double L = hexL * m_calSimple;
-			int intensity = (hexPulse * m_calPulse) / TensorPulseMapValue*255.0 + 0.5;
+			int intensity = (int)((hexPulse * m_calPulse) / TensorPulseMapValue*255.0 + 0.5);
 			double pulse = intensity > 255 ? 255 : intensity;
 
 			double cos_hA = cos(horizontalAngle * m_calRA);
@@ -938,7 +946,7 @@ void DecodePackage<PointT>::UseDecodeTensorPro_echo2(char* udpData, std::vector<
 			unsigned short  hexPulse = TwoHextoInt(udpData[offset + seq * 4 + 2], udpData[offset + seq * 4 + 3]);
 
 			double L = hexL * m_calSimple;
-			int intensity = (hexPulse * m_calPulse) / TensorPulseMapValue*255.0 + 0.5;
+			int intensity = (int)((hexPulse * m_calPulse) / TensorPulseMapValue*255.0 + 0.5);
 			double pulse = intensity > 255 ? 255 : intensity;
 
 			double cos_hA = cos(horizontalAngle * m_calRA);
@@ -1005,7 +1013,7 @@ void DecodePackage<PointT>::UseDecodeTensorPro0332(char* udpData, std::vector<TW
 			unsigned short  hexPulse = TwoHextoInt(udpData[offset + seq * 4 + 2], udpData[offset + seq * 4 + 3]);
 
 			double L = hexL * m_calSimple;
-			int intensity = (hexPulse * m_calPulse) / TensorPulseMapValue*255.0 + 0.5;
+			int intensity = (int)((hexPulse * m_calPulse) / TensorPulseMapValue*255.0 + 0.5);
 			double pulse = intensity > 255 ? 255 : intensity;
 
 			double cos_vA_RA = m_verticalChannelAngle16_cos_vA_RA[seq];
@@ -1073,14 +1081,14 @@ void DecodePackage<PointT>::UseDecodeScope(char* udpData, std::vector<TWPointDat
 			double hexToInt1 = TwoHextoInt(udpData[offset_block + seq * 8 + 0], udpData[offset_block + seq * 8 + 1]);
 			double hexPulse1 = TwoHextoInt(udpData[offset_block + seq * 8 + 2], udpData[offset_block + seq * 8 + 3]);
 			double L_1 = hexToInt1 * m_calSimple;
-			int intensity1 = (hexPulse1 * m_calPulse) / ScopePulseMapValue*255.0 + 0.5;
+			int intensity1 = (int)((hexPulse1 * m_calPulse) / ScopePulseMapValue*255.0 + 0.5);
 			double pulse_1 = intensity1 > 255 ? 255 : intensity1;
 
 
 			double hexToInt2 = TwoHextoInt(udpData[offset_block + seq * 8 + 4], udpData[offset_block + seq * 8 + 5]);
 			double hexPulse2 = TwoHextoInt(udpData[offset_block + seq * 8 + 6], udpData[offset_block + seq * 8 + 7]);
 			double L_2 = hexToInt2 * m_calSimple;
-			int intensity2 = (hexPulse2 * m_calPulse) / ScopePulseMapValue*255.0 + 0.5;
+			int intensity2 = (int)((hexPulse2 * m_calPulse) / ScopePulseMapValue*255.0 + 0.5);
 			double pulse_2 = intensity2 > 255 ? 255 : intensity2;
 
 			int channel = 65 - (16 * (blocks_num >= 4 ? blocks_num - 4 : blocks_num) + seq + 1);
@@ -1207,14 +1215,14 @@ void DecodePackage<PointT>::UseDecodeScope192(char* udpData, std::vector<TWPoint
 			double hexToInt1 = TwoHextoInt(udpData[offset + seq * 8 + 0], udpData[offset + seq * 8 + 1]);
 			double hexPulse1 = TwoHextoInt(udpData[offset + seq * 8 + 2], udpData[offset + seq * 8 + 3]);
 			double L_1 = hexToInt1 * m_calSimple;
-			int intensity1 = (hexPulse1 * m_calPulse) / ScopePulseMapValue*255.0 + 0.5;
+			int intensity1 = (int)((hexPulse1 * m_calPulse) / ScopePulseMapValue*255.0 + 0.5);
 			double pulse_1 = intensity1 > 255 ? 255 : intensity1;
 
 
 			double hexToInt2 = TwoHextoInt(udpData[offset + seq * 8 + 4], udpData[offset + seq * 8 + 5]);
 			double hexPulse2 = TwoHextoInt(udpData[offset + seq * 8 + 6], udpData[offset + seq * 8 + 7]);
 			double L_2 = hexToInt2 * m_calSimple;
-			int intensity2 = (hexPulse2 * m_calPulse) / ScopePulseMapValue*255.0 + 0.5;
+			int intensity2 = (int)((hexPulse2 * m_calPulse) / ScopePulseMapValue*255.0 + 0.5);
 			double pulse_2 = intensity2 > 255 ? 255 : intensity2;
 
 			int channel = 65 - (16 * (blocks_num >= 4 ? blocks_num - 4 : blocks_num) + seq + 1);
@@ -1344,14 +1352,14 @@ void DecodePackage<PointT>::UseDecodeScopeMiniA2_192(char* udpData, std::vector<
 			double hexToInt1 = TwoHextoInt(udpData[offset + seq * 8 + 0], udpData[offset + seq * 8 + 1]);
 			double hexPulse1 = TwoHextoInt(udpData[offset + seq * 8 + 2], udpData[offset + seq * 8 + 3]);
 			double L_1 = hexToInt1 * m_calSimple;
-			int intensity1 = (hexPulse1 * m_calPulse) / ScopePulseMapValue*255.0 + 0.5;
+			int intensity1 = (int)((hexPulse1 * m_calPulse) / ScopePulseMapValue*255.0 + 0.5);
 			double pulse_1 = intensity1 > 255 ? 255 : intensity1;
 
 
 			double hexToInt2 = TwoHextoInt(udpData[offset + seq * 8 + 4], udpData[offset + seq * 8 + 5]);
 			double hexPulse2 = TwoHextoInt(udpData[offset + seq * 8 + 6], udpData[offset + seq * 8 + 7]);
 			double L_2 = hexToInt2 * m_calSimple;
-			int intensity2 = (hexPulse2 * m_calPulse) / ScopePulseMapValue*255.0 + 0.5;
+			int intensity2 = (int)((hexPulse2 * m_calPulse) / ScopePulseMapValue*255.0 + 0.5);
 			double pulse_2 = intensity2 > 255 ? 255 : intensity2;
 
 			int channel = 65 - (16 * (blocks_num >= 4 ? blocks_num - 4 : blocks_num) + seq + 1);
@@ -1475,13 +1483,13 @@ void DecodePackage<PointT>::UseDecodeTempoA2(char* udpData, std::vector<TWPointD
 			double hexToInt1 = TwoHextoInt(udpData[offset + seq * 8 + 0], udpData[offset + seq * 8 + 1]);
 			double hexPulse1 = TwoHextoInt(udpData[offset + seq * 8 + 2], udpData[offset + seq * 8 + 3]);
 			double L_1 = hexToInt1 * m_calSimpleFPGA;
-			int intensity1 = (hexPulse1 * m_calPulseFPGA) / ScopePulseMapValue*255.0 + 0.5;
+			int intensity1 = (int)((hexPulse1 * m_calPulseFPGA) / ScopePulseMapValue*255.0 + 0.5);
 			double pulse_1 = intensity1 > 255 ? 255 : intensity1;
 
 			double hexToInt2 = TwoHextoInt(udpData[offset + seq * 8 + 4], udpData[offset + seq * 8 + 5]);
 			double hexPulse2 = TwoHextoInt(udpData[offset + seq * 8 + 6], udpData[offset + seq * 8 + 7]);
 			double L_2 = hexToInt2 * m_calSimpleFPGA;
-			int intensity2 = (hexPulse2 * m_calPulseFPGA) / ScopePulseMapValue*255.0 + 0.5;
+			int intensity2 = (int)((hexPulse2 * m_calPulseFPGA) / ScopePulseMapValue*255.0 + 0.5);
 			double pulse_2 = intensity2 > 255 ? 255 : intensity2;
 
 			int channel = 65 - (16 * (blocks_num >= 4 ? blocks_num - 4 : blocks_num) + seq + 1);
@@ -1819,15 +1827,24 @@ void DecodePackage<PointT>::DecodeDIFData(char* udpData)
 		duettoPivotVector[0] = pivotVectorX;
 		//std::cout << "PivotVector: X, " << pivotVectorX << std::endl;
 	}
+
 	if (!IsEqualityFloat5(pivotVectorY, duettoPivotVector[1]))
 	{
 		duettoPivotVector[1] = pivotVectorY;
 		//std::cout << "PivotVector: Y, " << pivotVectorY << std::endl;
 	}
+	
 	if (!IsEqualityFloat5(pivotVectorZ, duettoPivotVector[2]))
 	{
 		duettoPivotVector[2] = pivotVectorZ;
 		//std::cout << "PivotVector: Z, " << pivotVectorZ << std::endl;
+	}
+
+	//Delivery Calibrate
+	//std::cout << "Process Calibrate." << std::endl;
+	if (m_funcEOLCalibration)
+	{
+		m_funcEOLCalibration(&(udpData[764]), 256);
 	}
 }
 
@@ -1840,7 +1857,7 @@ void DecodePackage<PointT>::DecodeIMUData(char* udpData)
 	unsigned int t_sec = FourHexToInt(udpData[13], udpData[14], udpData[15], udpData[16]);
 	double t_usec = FourHexToInt(udpData[17], udpData[18], udpData[19], udpData[20]) * 0.1;
 
-	imu_data.stamp = (uint64_t)(t_sec) * 1000 * 1000 + t_usec;
+	imu_data.stamp = (uint64_t)((uint64_t)(t_sec) * 1000 * 1000 + t_usec);
 
 	//status calibrate
 	unsigned char  hex_status = udpData[35];

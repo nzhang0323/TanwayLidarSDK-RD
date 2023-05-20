@@ -31,12 +31,13 @@
 *
 */
 #pragma once
-#include "./src/CommomHeader.h"
-#include "./src/PackageCache.h"
-#include "./src/NetworkReader.h"
-#include "./src/PcapReader.h"
-#include "./src/DecodePackage.h"
-#include "./src/TWException.h"
+#include "CommomHeader.h"
+#include "PackageCache.h"
+#include "NetworkReader.h"
+#include "PcapReader.h"
+#include "DecodePackage.h"
+#include "TWException.h"
+#include "calibTools.h"
 
 /*
 *Interface classes for the SDK
@@ -84,21 +85,30 @@ public:
 	void SetTransform(float rotateX, float rotateY, float rotateZ, float moveX, float moveY, float moveZ);
 
 	/*
+	Sendto lidar
+	*/
+	bool SendtoLidar(const char* ptr, int length);
+
+	/*
 	*Register the point cloud callback function.
 	*/
-	inline void RegPointCloudCallback(const std::function<void(typename TWPointCloud<PointT>::Ptr, bool)>& callback);
+	void RegPointCloudCallback(const std::function<void(typename TWPointCloud<PointT>::Ptr, bool)>& callback);
 	/*
 	*Register the gps string callback function.
 	*/
-	inline void RegGPSCallback(const std::function<void(const std::string&)>& callback);
+	void RegGPSCallback(const std::function<void(const std::string&)>& callback);
 	/*
 	*Register the IMU data callback function.
 	*/
-	inline void RegIMUDataCallback(const std::function<void(const TWIMUData&)>& callback);
+	void RegIMUDataCallback(const std::function<void(const TWIMUData&)>& callback);
+	/*
+	*Register the delivery calibrate data callback function.
+	*/
+	void RegDeliveryCalibrateCallback(const std::function<void(const char* ptr, int length)>& callback);
 	/*
 	*Register the exception info callback function.
 	*/
-	inline void RegExceptionCallback(const std::function<void(const TWException&)>& callback);
+	void RegExceptionCallback(const std::function<void(const TWException&)>& callback);
 
 	/*
 	* run sdk
@@ -115,6 +125,13 @@ private:
 	std::shared_ptr<PcapReader> m_pcapReaderPtr;
 	std::shared_ptr<DecodePackage<PointT>> m_decodePackagePtr;
 	std::mutex m_mutexE;
+
+public:
+	// nzhang0323: test use.
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> m_pclFrames;
+	// struct CalibLidar2Car::CalibInputParam *m_caliInputParams;
+	// CalibLidar2Car::CalibInputParam m_caliInputParams;
+	// CalibLidar2Car::CalibOutputParam m_caliOutputParams;
 };
 
 
@@ -193,6 +210,15 @@ void TanwayLidarSDK<PointT>::SetCorrectedAngleToTSP0332(float angle1, float angl
 }
 
 template <typename PointT>
+bool TanwayLidarSDK<PointT>::SendtoLidar(const char* ptr, int length)
+{
+	if (m_networkReaderPtr)
+		return m_networkReaderPtr->SendData(ptr, length);
+	else
+		return false;
+}
+
+template <typename PointT>
 TanwayLidarSDK<PointT>::~TanwayLidarSDK()
 {
 
@@ -214,6 +240,12 @@ template <typename PointT>
 void TanwayLidarSDK<PointT>::RegIMUDataCallback(const std::function<void(const TWIMUData&)>& callback)
 {
 	m_decodePackagePtr->RegIMUDataCallback(callback);
+}
+
+template <typename PointT>
+void TanwayLidarSDK<PointT>::RegDeliveryCalibrateCallback(const std::function<void(const char* ptr, int length)>& callback)
+{
+	m_decodePackagePtr->RegDeliveryCalibrateCallback(callback);
 }
 
 template <typename PointT>

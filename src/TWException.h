@@ -69,6 +69,9 @@ public:
 		TWEC_ERROR_SETOPT_TIMEOUT_DIF = 0x12,		///Failed to set dif socket timeout!
 		TWEC_ERROR_SOCKET_RECV_DIF = 0x13,			///The dif socket received failed and will exit!
 
+		TWEC_ERROR_CREATE_SOCKET_SEND = 0x14,		///Create send socket error!
+		TWEC_ERROR_SOCKET_SEND_FAILED = 0x15,		///Send data error!
+
 		TWEC_ERROR_OPEN_PCAP_FAILED = 0x51,			///Open pcap file failed!
 		TWEC_ERROR_PCAP_FILE_INVALID = 0x52,		///The pcap file is invalid!
 	};

@@ -30,7 +30,7 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 */
-#include "TWException.h"
+#include "tanway/TWException.h"
 
 TWException::TWException()
 	:m_exceptionErrorCode(TWEC_ERROR_NONE), m_exceptionTipsCode(TWEC_TIPS_NONE)
