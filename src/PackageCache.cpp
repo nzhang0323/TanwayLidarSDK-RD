@@ -30,7 +30,7 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 */
-#include "tanway/PackageCache.h"
+#include "PackageCache.h"
 
 PackageCache::PackageCache()
 {

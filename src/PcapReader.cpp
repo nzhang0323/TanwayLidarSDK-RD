@@ -30,9 +30,9 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 */
-#include "tanway/PcapReader.h"
+#include "PcapReader.h"
 #include <fstream>
-#include "tanway/CommonDefine.h"
+#include "CommonDefine.h"
 
 
 PcapReader::PcapReader(std::string filePath, std::string lidarIP, int localPort, int localDIFPort, PackageCache& packageCache, bool repeat, std::mutex* mutex)

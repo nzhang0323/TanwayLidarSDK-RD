@@ -31,13 +31,13 @@
 *
 */
 #pragma once
-#include "CommomHeader.h"
-#include "PackageCache.h"
-#include "NetworkReader.h"
-#include "PcapReader.h"
-#include "DecodePackage.h"
-#include "TWException.h"
-#include "calibTools.h"
+#include "src/CommomHeader.h"
+#include "src/PackageCache.h"
+#include "src/NetworkReader.h"
+#include "src/PcapReader.h"
+#include "src/DecodePackage.h"
+#include "src/TWException.h"
+#include "tanway/calibTools.h""
 
 /*
 *Interface classes for the SDK

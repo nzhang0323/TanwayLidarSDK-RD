@@ -30,8 +30,8 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 */
-#include "tanway/NetworkReader.h"
-#include "tanway/CommonDefine.h"
+#include "NetworkReader.h"
+#include "CommonDefine.h"
 
 
 NetworkReader::NetworkReader(TWLidarType lidarType, std::string lidarIP, std::string localIP, int localPointCloudPort, int localDIFPort, PackageCache& packageCache, std::mutex* mutex)
