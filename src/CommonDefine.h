@@ -134,6 +134,8 @@ struct __attribute__((aligned(16))) TWPointCloud
 	uint64_t stamp = 0;
 	std::string frame_id = "TanwayTP";
 
+	uint32_t TW_STATUS_CODE;
+
 	PointData m_pointData;
 };
 

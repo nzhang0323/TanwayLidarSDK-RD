@@ -125,7 +125,7 @@ private:
 	void DecodeGPSData(char* udpData);	//decode gps date
 	void DecodeDIFData(char* udpData);
 	void DecodeIMUData(char* udpData);
-
+	void ClassifyHWStatusCode(char* rawcode, unsigned int &status);
 
 protected:
 	virtual void UseDecodeTensorPro(char* udpData, std::vector<TWPointData>& pointCloud);
@@ -1840,8 +1840,14 @@ void DecodePackage<PointT>::DecodeDIFData(char* udpData)
 		//std::cout << "PivotVector: Z, " << pivotVectorZ << std::endl;
 	}
 
-	//Delivery Calibrate
-	//std::cout << "Process Calibrate." << std::endl;
+	// Classify status code.
+	// Record hardware status code to point cloud frame.
+	// m_pointCloudPtr -> TW_STATUS_CODE = 0xaa;
+	// unsigned long long status_code = 
+	ClassifyHWStatusCode(&udpData[384], m_pointCloudPtr -> TW_STATUS_CODE);
+
+	// Delivery Calibrate
+	// std::cout << "Process Calibrate." << std::endl;
 	if (m_funcEOLCalibration)
 	{
 		m_funcEOLCalibration(&(udpData[764]), 256);
@@ -2308,4 +2314,57 @@ void DecodePackage<PointT>::DecodeTempoA2(char* udpData)
 
 		m_pointCloudPtr->PushBack(std::move(basic_point));
 	}
+}
+
+template <typename PointT>
+void DecodePackage<PointT>::ClassifyHWStatusCode(char* rawcode, unsigned int &status)
+{
+	struct hwcode {
+		unsigned int low;
+		unsigned int high;
+	};
+	struct hwcode s;
+	unsigned long long *code = (unsigned long long *)&s;
+	
+	unsigned long long classifier_LIDAR_ERROR_TIMESTAMP     =     0x0000000000000020;
+	unsigned long long classifier_LIDAR_WARNING_HARDWARE    =     0x2000000600500000;
+	unsigned long long classifier_LIDAR_ERROR_HARDWARE      =     0x1E7E1FF8022E3FDE;
+	unsigned long long classifier_LIDAR_ERROR_UNCALIBRATED  =     0x0000000000010000;
+	unsigned long long classifier_LIDAR_ERROR_SHELTERED     =     0x4000000000000000;
+	unsigned long long classifier_LIDAR_ERROR_DUST          =     0x2000000000000000;
+
+	// byte[0..7]: 40, 60, 00, 00, 00, 01, 00, 2a.
+	s.low |= (rawcode[7] & 0x000000ff);
+	s.low |= ((rawcode[6] << 8) & 0x0000ff00);
+	s.low |= ((rawcode[5] << 16) & 0x00ff0000);
+	s.low |= ((rawcode[4] << 24) & 0xff000000);
+	s.high |= (rawcode[3] & 0x000000ff);
+	s.high |= ((rawcode[2] << 8) & 0x0000ff00);
+	s.high |= ((rawcode[1] << 16) & 0x00ff0000);
+	s.high |= ((rawcode[0] << 24) & 0xff000000);
+
+	if ((*code) & classifier_LIDAR_ERROR_TIMESTAMP) {
+		status |= (0x01 << 0);
+	}
+	if ((*code) & classifier_LIDAR_WARNING_HARDWARE) {
+		status |= (0x01 << 1);
+	}
+	if ((*code) & classifier_LIDAR_ERROR_HARDWARE) {
+		status |= (0x01 << 2);
+	}
+	if ((*code) & classifier_LIDAR_ERROR_UNCALIBRATED) {
+		status |= (0x01 << 3);
+	}
+	if ((*code) & classifier_LIDAR_ERROR_SHELTERED) {
+		status |= (0x01 << 4);
+	}
+	if ((*code) & classifier_LIDAR_ERROR_DUST) {
+		status |= (0x01 << 5);
+	}
+	
+	// printf("[SDK][Debug] status code,byte[0..7]: %.2x, %.2x, %.2x, %.2x, %.2x, %.2x, %.2x, %.2x.\n",
+	// 		rawcode[0], rawcode[1], rawcode[2], rawcode[3],
+	// 		rawcode[4], rawcode[5], rawcode[6], rawcode[7]);
+
+	printf("[SDK][Debug] Hardware status code: 0X%16.16llx\n", *code);
 }
