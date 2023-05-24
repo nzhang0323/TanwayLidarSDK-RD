@@ -1840,10 +1840,7 @@ void DecodePackage<PointT>::DecodeDIFData(char* udpData)
 		//std::cout << "PivotVector: Z, " << pivotVectorZ << std::endl;
 	}
 
-	// Classify status code.
-	// Record hardware status code to point cloud frame.
-	// m_pointCloudPtr -> TW_STATUS_CODE = 0xaa;
-	// unsigned long long status_code = 
+	// Classify and record hardware status code to point cloud frame.
 	ClassifyHWStatusCode(&udpData[384], m_pointCloudPtr -> TW_STATUS_CODE);
 
 	// Delivery Calibrate
@@ -2196,8 +2193,8 @@ void DecodePackage<PointT>::DecodeDuetto(char* udpData)
 		CalculateRotateAllPointCloud(oriPoint);
 
 		PointT basic_point;
-		setX(basic_point, static_cast<float>(oriPoint.x));
-		setY(basic_point, static_cast<float>(oriPoint.y));
+		setX(basic_point, -static_cast<float>(oriPoint.y));
+		setY(basic_point, static_cast<float>(oriPoint.x));
 		setZ(basic_point, static_cast<float>(oriPoint.z));
 		setIntensity(basic_point, static_cast<float>(oriPoint.pulse));
 		setChannel(basic_point, oriPoint.channel);
@@ -2366,5 +2363,5 @@ void DecodePackage<PointT>::ClassifyHWStatusCode(char* rawcode, unsigned int &st
 	// 		rawcode[0], rawcode[1], rawcode[2], rawcode[3],
 	// 		rawcode[4], rawcode[5], rawcode[6], rawcode[7]);
 
-	printf("[SDK][Debug] Hardware status code: 0X%16.16llx\n", *code);
+	// printf("[SDK][Debug] Hardware status code: 0X%16.16llx\n", *code);
 }
