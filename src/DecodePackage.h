@@ -2193,8 +2193,10 @@ void DecodePackage<PointT>::DecodeDuetto(char* udpData)
 		CalculateRotateAllPointCloud(oriPoint);
 
 		PointT basic_point;
-		setX(basic_point, -static_cast<float>(oriPoint.y));
-		setY(basic_point, static_cast<float>(oriPoint.x));
+		// setX(basic_point, -static_cast<float>(oriPoint.y));
+		// setY(basic_point, static_cast<float>(oriPoint.x));
+		setX(basic_point, static_cast<float>(oriPoint.x));
+		setY(basic_point, static_cast<float>(oriPoint.y));
 		setZ(basic_point, static_cast<float>(oriPoint.z));
 		setIntensity(basic_point, static_cast<float>(oriPoint.pulse));
 		setChannel(basic_point, oriPoint.channel);

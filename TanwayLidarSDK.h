@@ -125,13 +125,6 @@ private:
 	std::shared_ptr<PcapReader> m_pcapReaderPtr;
 	std::shared_ptr<DecodePackage<PointT>> m_decodePackagePtr;
 	std::mutex m_mutexE;
-
-public:
-	// nzhang0323: test use.
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> m_pclFrames;
-	// struct CalibLidar2Car::CalibInputParam *m_caliInputParams;
-	// CalibLidar2Car::CalibInputParam m_caliInputParams;
-	// CalibLidar2Car::CalibOutputParam m_caliOutputParams;
 };
 
 
