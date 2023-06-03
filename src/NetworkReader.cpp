@@ -430,7 +430,7 @@ bool NetworkReader::SendData(const char* ptr, int length)
 	sTargetAddr.sin_port = htons(8082);
 #ifdef __linux__
 	//sTargetAddr.sin_addr.s_addr = inet_addr(m_lidarIP.data());
-	sTargetAddr.sin_addr.s_addr = inet_addr("192.168.6.51");
+	sTargetAddr.sin_addr.s_addr = inet_addr("10.0.0.253");
 #elif _WIN32
 	inet_pton(AF_INET, m_lidarIP.data(), &(sTargetAddr.sin_addr.s_addr));
 #endif
