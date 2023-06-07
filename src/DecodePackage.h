@@ -120,6 +120,7 @@ private:
 	void DecodeScopeMiniA2_192(char* udpData);
 	void DecodeTempoA2(char* udpData);
 	void DecodeDuetto(char* udpData);
+	void SetDuettoVerticalAngleType(int type, double offsetVerAngleL, double offsetVerAngleR);
 	
 
 	void DecodeGPSData(char* udpData);	//decode gps date
@@ -245,6 +246,8 @@ protected:
 	double duettoPivotVector[3] = {0, 0, 1};
 	double m_correction_movement_L[3] = {0.017, 0, 0};
 	double m_correction_movement_R[3] = {-0.017, 0, 0};
+	double m_offsetVerAngleL = 0.0;
+	double m_offsetVerAngleR = 0.0;
 
 private:
 	int m_preBlockCount = 0;
@@ -1771,6 +1774,10 @@ void DecodePackage<PointT>::DecodeDIFData(char* udpData)
 	double mirrorB = (hex8_mirrorB - 128) * 0.01 + (0);
 	double mirrorC = (hex8_mirrorC - 128) * 0.01 + (4.5);
 
+	unsigned int offsetAngle = FourHexToInt(udpData[508 + 4 * 30 + 0], udpData[508 + 4 * 30 + 1], udpData[508 + 4 * 30 + 2], udpData[508 + 4 * 30 + 3]);
+	double offsetVerAngleL = (((int)((offsetAngle >> 9) & 0x000001FF)) - 256)*0.01;
+	double offsetVerAngleR = (((int)(offsetAngle & 0x000001FF)) - 256)*0.01;
+
 	//
 	unsigned short hexMoveAngleL = TwoHextoInt(udpData[508 + 4 * 31 + 0], udpData[508 + 4 * 31 + 1]);
 	unsigned short hexMoveAngleR = TwoHextoInt(udpData[508 + 4 * 31 + 2], udpData[508 + 4 * 31 + 3]);
@@ -1848,6 +1855,18 @@ void DecodePackage<PointT>::DecodeDIFData(char* udpData)
 	if (m_funcEOLCalibration)
 	{
 		m_funcEOLCalibration(&(udpData[764]), 256);
+	}
+
+	if ((!IsEqualityFloat3(offsetVerAngleL, m_offsetVerAngleL)) ||
+		(!IsEqualityFloat3(offsetVerAngleR, m_offsetVerAngleR)))
+	{
+		m_offsetVerAngleL = offsetVerAngleL;
+		m_offsetVerAngleR = offsetVerAngleR;
+
+		SetDuettoVerticalAngleType(
+			0,
+			m_offsetVerAngleL,
+			m_offsetVerAngleR);
 	}
 }
 
@@ -2366,4 +2385,20 @@ void DecodePackage<PointT>::ClassifyHWStatusCode(char* rawcode, unsigned int &st
 	// 		rawcode[4], rawcode[5], rawcode[6], rawcode[7]);
 
 	// printf("[SDK][Debug] Hardware status code: 0X%16.16llx\n", *code);
+}
+
+template <typename PointT>
+void DecodePackage<PointT>::SetDuettoVerticalAngleType(int type, double offsetVerAngleL, double offsetVerAngleR)
+{
+	// Duetto
+	for (int i = 0; i < 16; i++)
+	{
+		double vA_L = m_verticalChannelsAngle_Duetto16L[i] + offsetVerAngleL;
+		m_verticalChannelAngle_Duetto16L_cos_vA_RA[i] = cos(vA_L * m_calRA);
+		m_verticalChannelAngle_Duetto16L_sin_vA_RA[i] = sin(vA_L * m_calRA);
+
+		double vA_R = m_verticalChannelsAngle_Duetto16R[i] + offsetVerAngleR;
+		m_verticalChannelAngle_Duetto16R_cos_vA_RA[i] = cos(vA_R * m_calRA);
+		m_verticalChannelAngle_Duetto16R_sin_vA_RA[i] = sin(vA_R * m_calRA);
+	}
 }
